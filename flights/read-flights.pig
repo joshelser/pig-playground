@@ -1,11 +1,19 @@
-register /Users/jelser/projects/accumulo-pig.git/target/accumulo-pig-1.4.4-SNAPSHOT.jar;
-register /usr/local/lib/accumulo/lib/accumulo-core-1.4.5-SNAPSHOT.jar;
-register /usr/local/lib/accumulo/lib/libthrift-0.6.1.jar;
+register /usr/local/lib/accumulo/lib/accumulo-core.jar;
+register /usr/local/lib/accumulo/lib/accumulo-server.jar;
+register /usr/local/lib/accumulo/lib/accumulo-fate.jar;
+register /usr/local/lib/accumulo/lib/accumulo-trace.jar;
+register /usr/local/lib/accumulo/lib/libthrift.jar;
 register /usr/local/lib/zookeeper/zookeeper-3.4.5.jar;
-register /usr/local/lib/accumulo/lib/cloudtrace-1.4.5-SNAPSHOT.jar;
 
-flight_data = LOAD 'accumulo://flights?instance=accumulo1.4&user=root&password=secret&zookeepers=localhost&start=2001&end=2003&fetch_columns=origin,destination,departure_delay,arrival_delay' using org.apache.accumulo.pig.AccumuloStorage() as (rowkey:chararray, data:map[]);
+flight_data = LOAD
+'accumulo://flights?instance=accumulo15&user=root&password=secret&zookeepers=localhost'
+using org.apache.pig.backend.hadoop.accumulo.AccumuloStorage('*') as (rowkey:chararray, data:map[]);
 
-delays = FILTER flight_data BY (data#'origin' is not null and data#'destination' is not null and data#'departure_delay' is not null and data#'arrival_delay' is not null);
+-- flight_data = FOREACH flight_data generate rowkey, data#'origin' as origin, data#'departure_time' as departure_time, data#'scheduled_departure_time' as scheduled_departure_time, data#'flight_number' as flight_number, data#'taxi_out' as taxi_out;
 
-dump delays;
+flight_data = LIMIT flight_data 100000;
+
+-- airports = FOREACH airports GENERATE data#'name' as name, data#'state' as state, data#'code' as code, data#'country' as country, data#'city' as city;
+
+-- dump airports;
+dump flight_data;

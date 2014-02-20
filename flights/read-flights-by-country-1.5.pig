@@ -1,21 +1,37 @@
-flight_data = LOAD
-'accumulo://flights?instance=accumulo15&user=root&password=secret&zookeepers=localhost&fetch_columns=departure_time,scheduled_departure_time,flight_number,taxi_out,origin'
-using org.apache.pig.backend.hadoop.accumulo.AccumuloStorage() as (rowkey:chararray, data:map[]);
+/*register /usr/local/lib/accumulo/lib/accumulo-core.jar;
+register /usr/local/lib/accumulo/lib/accumulo-server.jar;
+register /usr/local/lib/accumulo/lib/accumulo-fate.jar;
+register /usr/local/lib/accumulo/lib/accumulo-trace.jar;
+register /usr/local/lib/accumulo/lib/libthrift.jar;
+register /usr/local/lib/zookeeper/zookeeper-3.4.5.jar;*/
 
-airports = LOAD 'accumulo://airports?instance=accumulo15&user=root&password=secret&zookeepers=localhost'
-using org.apache.pig.backend.hadoop.accumulo.AccumuloStorage() as (rowkey:chararray, data:map[]);
+flight_data = LOAD 'accumulo://flights4?instance=accumulo15&user=root&password=secret&zookeepers=localhost'
+using
+org.apache.pig.backend.hadoop.accumulo.AccumuloStorage('departure_time,scheduled_departure_time,flight_number,origin')
+as (rowkey:chararray, departure_time:chararray, scheduled_departure_time:chararray, flight_number:chararray, origin:chararray);
 
-flight_data = FOREACH flight_data generate rowkey, data#'origin' as origin, data#'departure_time' as departure_time, data#'scheduled_departure_time' as scheduled_departure_time, data#'flight_number' as flight_number, data#'taxi_out' as taxi_out;
+airports = LOAD 'accumulo://airports4?instance=accumulo15&user=root&password=secret&zookeepers=localhost'
+using org.apache.pig.backend.hadoop.accumulo.AccumuloStorage('*') as (rowkey:chararray, data:map[]);
+/*airports = LOAD 'accumulo://airports4?instance=accumulo15&user=root&password=secret&zookeepers=localhost'
+using org.apache.pig.backend.hadoop.accumulo.AccumuloStorage('name,state,code,country,city') as (rowkey:chararray,
+        name:chararray, state:chararray, code:chararray, country:chararray, city:chararray);*/
 
---flight_data = LIMIT flight_data 100000;
+-- flight_data = FOREACH flight_data generate rowkey, data#'origin' as origin, data#'departure_time' as departure_time, data#'scheduled_departure_time' as scheduled_departure_time, data#'flight_number' as flight_number, data#'taxi_out' as taxi_out;
 
-airports = FOREACH airports GENERATE data#'name' as name, data#'state' as state, data#'code' as code, data#'country' as country, data#'city' as city;
+-- flight_data = LIMIT flight_data 100000;
+
+--dump flight_data;
+
+--airports = FOREACH airports GENERATE (chararray) data#'code' as code;
+airports = FOREACH airports GENERATE (chararray) data#'name' as name, (chararray) data#'state' as state, (chararray)
+data#'code' as code, (chararray) data#'country' as country, (chararray) data#'city' as city;
+
 
 flights_with_origin = JOIN flight_data BY origin, airports by code;
 
 STORE flights_with_origin INTO
-'accumulo://flights_with_airports?instance=accumulo15&user=root&password=secret&zookeepers=localhost' using
-org.apache.pig.backend.hadoop.accumulo.AccumuloStorage('--write-columns origin,departure_time,scheduled_departure_time,flight_number,taxi_out,name,state,code,country,city');
+'accumulo://flights_with_airports18?instance=accumulo15&user=root&password=secret&zookeepers=localhost' using
+org.apache.pig.backend.hadoop.accumulo.AccumuloStorage('origin,departure_time,scheduled_departure_time,flight_number,name,state,code,country,city','--buff 104857600');
 
 --STORE airports INTO 'accumulo://new_airports?instance=accumulo1.5&user=root&password=secret&zookeepers=localhost' using
 --org.apache.pig.backend.hadoop.accumulo.AccumuloStorage('name,state,code,country,city');
