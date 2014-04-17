@@ -1,16 +1,10 @@
-/*register /usr/local/lib/accumulo/lib/accumulo-core.jar;
-register /usr/local/lib/accumulo/lib/accumulo-server.jar;
-register /usr/local/lib/accumulo/lib/accumulo-fate.jar;
-register /usr/local/lib/accumulo/lib/accumulo-trace.jar;
-register /usr/local/lib/accumulo/lib/libthrift.jar;
-register /usr/local/lib/zookeeper/zookeeper-3.4.5.jar;*/
-
-flight_data = LOAD 'accumulo://flights4?instance=accumulo15&user=root&password=secret&zookeepers=localhost'
+flight_data = LOAD 'accumulo://flights?instance=accumulo151&user=root&password=secret&zookeepers=localhost'
 using
 org.apache.pig.backend.hadoop.accumulo.AccumuloStorage('departure_time,scheduled_departure_time,flight_number,origin')
-as (rowkey:chararray, departure_time:chararray, scheduled_departure_time:chararray, flight_number:chararray, origin:chararray);
+as (rowkey:chararray, departure_time:chararray, scheduled_departure_time:chararray, flight_number:chararray,
+        origin:chararray);
 
-airports = LOAD 'accumulo://airports4?instance=accumulo15&user=root&password=secret&zookeepers=localhost'
+airports = LOAD 'accumulo://airports?instance=accumulo151&user=root&password=secret&zookeepers=localhost'
 using org.apache.pig.backend.hadoop.accumulo.AccumuloStorage('*') as (rowkey:chararray, data:map[]);
 /*airports = LOAD 'accumulo://airports4?instance=accumulo15&user=root&password=secret&zookeepers=localhost'
 using org.apache.pig.backend.hadoop.accumulo.AccumuloStorage('name,state,code,country,city') as (rowkey:chararray,
@@ -30,7 +24,7 @@ data#'code' as code, (chararray) data#'country' as country, (chararray) data#'ci
 flights_with_origin = JOIN flight_data BY origin, airports by code;
 
 STORE flights_with_origin INTO
-'accumulo://flights_with_airports18?instance=accumulo15&user=root&password=secret&zookeepers=localhost' using
+'accumulo://flights_with_airports?instance=accumulo151&user=root&password=secret&zookeepers=localhost' using
 org.apache.pig.backend.hadoop.accumulo.AccumuloStorage('origin,departure_time,scheduled_departure_time,flight_number,name,state,code,country,city','--buff 104857600');
 
 --STORE airports INTO 'accumulo://new_airports?instance=accumulo1.5&user=root&password=secret&zookeepers=localhost' using
